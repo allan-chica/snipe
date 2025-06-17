@@ -28,7 +28,6 @@ def is_logged_in(page):
 	try:
 		page.goto("https://www.linkedin.com/feed/", timeout=60000)
 		page.wait_for_selector("img.global-nav__me-photo", timeout=5000)
-		# return "feed" in page.url
 		return True
 	except:
 		return False
