@@ -1,4 +1,3 @@
-import json
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote
@@ -63,9 +62,6 @@ def scrape(keywords="Frontend developer", location="latin america", timespan=30,
 
 		except Exception:
 			continue
-
-	with open("results/linkedin.json", "w", encoding="utf-8") as f:
-		json.dump(jobs, f, indent=4, ensure_ascii=False)
 
 	return jobs
 
