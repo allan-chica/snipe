@@ -51,7 +51,7 @@ def scrape():
 		location = job.find('span', {"class": "job-search-card__location"})
 
 		date_new = job.find('time', {"class": "job-search-card__listdate--new"})
-		date = job.find('time', {"job-search-card__listdate"})
+		date = job.find('time', {"class": "job-search-card__listdate"})
 
 		job = {
 			'title': title,
