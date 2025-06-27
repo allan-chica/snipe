@@ -26,8 +26,6 @@ def scrape(keywords="Frontend developer", location="latin america", timespan=30,
 		"&start=0" # Pagination
 	)
 
-	print(url)
-
 	res = requests.get(url, headers = headers)
 
 	if not res.ok:
