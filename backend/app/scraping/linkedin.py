@@ -1,75 +1,74 @@
-from playwright.sync_api import sync_playwright
 import json
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from urllib.parse import quote
 
-def run_scraper():
-	print("🔍 Starting LinkedIn job scraper...")
+# Job list:
+# https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=Developer&start=0
 
-	search_url = (
-		"https://www.linkedin.com/jobs/search/"
-		"?f_TPR=r1800"
-		"&keywords=frontend" # Keyword for job search
-		# "&f_E=2%2C3%2C4%2C5%2C6%2C7%2C8%2C9" # Full-time, Contract, Internship, etc.
-		"&f_WT=2" # Remote jobs
-		# "&f_JT=F"  # Full-time jobs
-		# "&location=Worldwide" # Location
-		# "&location=Argentina" # Location
-		"&geoId=91000011" # Location latin america
+# Job post:
+# https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/4245287594
+
+def scrape():
+
+	headers = {
+		"User-Agent": "Mozilla/5.0"
+	}
+
+	keywords = "Frontend developer" # Keyword for job search
+	timespan = "r1800"
+	location = "Latin America" # Worldwide, Spain, Argentina, Latin America
+	remote = True
+
+	url = (
+		"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
+		f"?keywords={quote(keywords)}"
+		f"&f_TPR={timespan}"
+		f"&location={quote(location)}" # Location
+		f"{'&f_WT=2' if remote else ''}" # Remote jobs
+		"&start=0" # Pagination
 	)
 
-	with sync_playwright() as p:
-		browser = p.chromium.launch(headless=True)
-		page = browser.new_page()
+	res = requests.get(url, headers = headers)
 
-		print("🌐 Navigating to LinkedIn...")
+	if not res.ok:
+		print("Failed to fetch jobs: ", res.status_code)
+		return
 
-		try:
-			page.goto(search_url, timeout = 60000)
-		except Exception as e:
-			print(f"❌ Error navigating to LinkedIn: {e}")
-			browser.close()
-			return
+	soup = BeautifulSoup(res.text, "html.parser")
+	job_cards = soup.find_all("li")
 
-		page.screenshot(path="linkedin.png", full_page=True)
-		print("📸 Screenshot taken: linkedin.png")
+	job_list = []
 
-		# Wait for job cards to load
-		# page.wait_for_selector(".jobs-search__results-list")
+	for job in job_cards:
+		base_card = job.select_one(".base-card")
+		job_id = base_card.get("data-entity-urn").split(":")[3]
 
-		# Scrape a few jobs
-		jobs = page.query_selector_all(".job-search-card")
-		print(f"📦 Found {len(jobs)} job postings.")
+		title = job.find('h3').text.strip()
+		url = f'https://www.linkedin.com/jobs/view/{job_id}/'
+		company = job.find('a', {"class": "hidden-nested-link"})
+		location = job.find('span', {"class": "job-search-card__location"})
 
-		job_data = []
+		date_new = job.find('time', {"class": "job-search-card__listdate--new"})
+		date = job.find('time', {"job-search-card__listdate"})
 
-		for job in jobs:
-			title = job.query_selector(".base-search-card__title")
-			company = job.query_selector(".base-search-card__subtitle")
-			location = job.query_selector(".job-search-card__location")
-			time_posted = job.query_selector(".job-search-card__listdate--new")
-			link = job.query_selector("a")
+		job = {
+			'title': title,
+			'url': url,
+			'company': company.text.strip() if company else '',
+			'location': location.text.strip() if location else '',
+			# 'date': date['datetime'] if date else date_new['datetime'] if date_new else '',
+			'posted': date.text.strip() if date else date_new.text.strip() if date_new else ''
+		}
 
-			time_info = time_posted.inner_text() if time_posted else None
-			url = link.get_attribute("href") if link else None
+		job_list.append(job)
 
-			job_data.append({
-				"title": title.inner_text().strip(),
-				"company": company.inner_text().strip(),
-				"location": location.inner_text().strip(),
-				"time_posted": time_info.strip() if time_info else None,
-				"url": url.strip() if url else None
-			})
+	jobs_df = pd.DataFrame(job_list)
+	jobs_df.to_csv('results/dev.csv', index=False)
 
-			# Log to console
-			# print("-" * 30)
-			# print(f"🔹 Title: {title} {'(🕑 ' + time_posted.inner_text() + ')' if time_posted else ''}")
-			# print(f"🏢 Company: {company} in {location}")
-			# print(f"🔗 URL: {link.get_attribute("href") if link else ''}")
-
-		# Save job data to JSON file
-		with open("linkedin.json", "w", encoding="utf-8") as f:
-			json.dump(job_data, f, indent=4, ensure_ascii=False)
-
-		browser.close()
+	with open("results/linkedin.json", "w", encoding="utf-8") as f:
+		json.dump(job_list, f, indent=4, ensure_ascii=False)
 
 if __name__ == "__main__":
-	run_scraper()
+	scrape()
