@@ -50,6 +50,7 @@ def scrape(keywords="Frontend developer", location="latin america", timespan=30,
 			date = job.find('time', {"class": "job-search-card__listdate"})
 
 			jobs.append({
+				'job_id': job_id,
 				'title': title,
 				'url': url,
 				'company': company.text.strip() if company else '',
