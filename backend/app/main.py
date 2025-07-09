@@ -17,7 +17,17 @@ app.add_middleware(
 def read_jobs(
 	keywords: str = Query("Frontend developer"),
 	location: str = Query("latin america"),
+	timespan: int = 30,
 	remote: bool = Query(True)
 ):
-	jobs = scrape(keywords, location, remote)
-	return {"results": jobs}
+	job_list = []
+
+	while (True):
+		jobs = scrape(keywords, location, timespan, remote, start=len(job_list))
+		job_list.extend(jobs)
+
+		if (len(jobs) < 10):
+			break
+
+	print(len(job_list))
+	return {"results": job_list}

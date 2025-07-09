@@ -11,7 +11,7 @@ from urllib.parse import quote
 # Location options: worldwide, spain, argentina, latin america
 # Timespan is in minutes
 
-def scrape(keywords="Frontend developer", location="latin america", timespan=30, remote=True):
+def scrape(keywords="Frontend developer", location="latin america", timespan=30, remote=True, start=0):
 
 	headers = {
 		"User-Agent": "Mozilla/5.0"
