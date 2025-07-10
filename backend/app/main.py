@@ -30,4 +30,6 @@ def read_jobs(
 		if (len(jobs) < 10):
 			break
 
+	job_list.sort(key=lambda job: job['minutes_ago'])
+
 	return {"results": job_list, "number_of_jobs": len(job_list)}

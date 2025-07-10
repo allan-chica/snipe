@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote
+import re
 
 # Job list:
 # https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=Developer&start=0
@@ -49,14 +50,16 @@ def scrape(keywords="Frontend developer", location="latin america", timespan=30,
 			date_new = job.find('time', {"class": "job-search-card__listdate--new"})
 			date = job.find('time', {"class": "job-search-card__listdate"})
 
+			posted_str = date.text.strip() if date else date_new.text.strip() if date_new else ''
+
 			jobs.append({
 				'job_id': job_id,
 				'title': title,
 				'url': url,
 				'company': company.text.strip() if company else '',
 				'location': location.text.strip() if location else '',
-				# 'date': date['datetime'] if date else date_new['datetime'] if date_new else '',
-				'posted': date.text.strip() if date else date_new.text.strip() if date_new else ''
+				'posted': posted_str,
+				'minutes_ago': parse_posted_time(posted_str)
 			})
 
 		except Exception:
@@ -64,5 +67,33 @@ def scrape(keywords="Frontend developer", location="latin america", timespan=30,
 
 	return jobs
 
-if __name__ == "__main__":
-	scrape()
+def parse_posted_time(posted_str):
+	"""
+	Convert 'Just now', '1 minute ago', '2 hours ago', etc. to minutes.
+	"""
+	posted_str = posted_str.lower().strip()
+
+	if "just now" in posted_str:
+		return 0
+
+	match = re.search(r"(\d+)\s+(minute|hour|day|week|month|year)", posted_str)
+	if not match:
+		return float('inf') # Push unknown times to end
+
+	number = int(match.group(1))
+	unit = match.group(2)
+
+	if unit == "minute":
+		return number
+	elif unit == "hour":
+		return number * 60
+	elif unit == "day":
+		return number * 60 * 24
+	elif unit == "week":
+		return number * 60 * 24 * 7
+	elif unit == "month":
+		return number * 60 * 24 * 30
+	elif unit == "year":
+		return number * 60 * 24 * 365
+
+	return float('inf')
