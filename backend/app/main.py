@@ -21,8 +21,9 @@ def read_jobs(
 	remote: bool = Query(True)
 ):
 	job_list = []
+	max_pages = 10
 
-	while (True):
+	for page in range(max_pages):
 		jobs = scrape(keywords, location, timespan, remote, start=len(job_list))
 		job_list.extend(jobs)
 
