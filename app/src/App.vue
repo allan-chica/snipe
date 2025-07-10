@@ -62,7 +62,7 @@ async function searchJobs() {
 		const res = await fetch(`/api/jobs
 			?keywords=${formatedKeywords}
 			&location=${formatedLocation}
-			&timespan=${timespan.value}
+			${timespan.value == '' ? `&timespan=${timespan.value}` : ''}
 			&remote=${isRemote.value}`)
 
 		const data = await res.json()
