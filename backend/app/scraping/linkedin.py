@@ -23,7 +23,7 @@ def scrape(keywords="Frontend developer", location="latin america", timespan=30,
 		f"&location={quote(location)}"
 		f"&f_TPR=r{timespan * 60}"
 		f"{'&f_WT=2' if remote else ''}"
-		"&start=0" # Pagination
+		f"&start={start}" # Pagination
 	)
 
 	res = requests.get(url, headers = headers)

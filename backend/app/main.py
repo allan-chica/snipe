@@ -29,5 +29,4 @@ def read_jobs(
 		if (len(jobs) < 10):
 			break
 
-	print(len(job_list))
-	return {"results": job_list}
+	return {"results": job_list, "number_of_jobs": len(job_list)}
